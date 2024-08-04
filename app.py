@@ -43,48 +43,57 @@ st.title("Employee Shuttle Tracker")
 # Fetch the last known vehicle positions
 vehicle_positions = get_last_vehicle_positions(api)
 
-# Display Map
-if not df.empty:
-    first_stop_lat = df.iloc[0]['stop_lat']
-    first_stop_lon = df.iloc[0]['stop_lon']
-    m = folium.Map(location=[first_stop_lat, first_stop_lon], zoom_start=12)
+# Create tabs for each unique last_stop
+last_stops = df['last_stop'].unique()
+tabs = st.tabs(last_stops)
 
-    # Add last known vehicle positions
-    for vehicle_name, (vehicle_lat, vehicle_lon) in vehicle_positions.items():
-        folium.Marker(
-            location=[vehicle_lat, vehicle_lon],
-            popup=f"{vehicle_name} (Last Known Position)",
-            icon=folium.Icon(color="red", icon="info-sign")
-        ).add_to(m)
+for i, last_stop in enumerate(last_stops):
+    with tabs[i]:
+        st.subheader(f"Shuttles to {last_stop}")
+        selected_routes = df[df['last_stop'] == last_stop]
+        
+        # Display Map
+        if not selected_routes.empty:
+            first_stop_lat = selected_routes.iloc[0]['stop_lat']
+            first_stop_lon = selected_routes.iloc[0]['stop_lon']
+            m = folium.Map(location=[first_stop_lat, first_stop_lon], zoom_start=12)
 
-    # Add shuttle route stops and lines
-    for route_name in df["route_name"].unique():
-        selected_route = df[df["route_name"] == route_name]
-        folium.PolyLine(
-            locations=selected_route[["stop_lat", "stop_lon"]].values.tolist() + [(selected_route.iloc[-1]['last_stop_lat'], selected_route.iloc[-1]['last_stop_lon'])],
-            color="blue",
-            weight=2.5,
-            opacity=1
-        ).add_to(m)
-        for index, row in selected_route.iterrows():
-            icon_html = f"""
-            <div style="font-size: 10px; color: white; background-color: red; border-radius: 50%; width: 24px; height: 24px; text-align: center; line-height: 24px;">
-                {row['stop_sequence']}
-            </div>
-            """
-            folium.Marker(
-                location=[row["stop_lat"], row["stop_lon"]],
-                popup=f"Stop {row['stop_sequence']}: {row['stop_intersection']}",
-                icon=folium.DivIcon(html=icon_html)
-            ).add_to(m)
-        # Add last stop marker
-        folium.Marker(
-            location=[selected_route.iloc[-1]["last_stop_lat"], selected_route.iloc[-1]["last_stop_lon"]],
-            popup=f"Last Stop: {selected_route.iloc[-1]['last_stop']}",
-            icon=folium.Icon(color="green", icon="flag")
-        ).add_to(m)
+            # Add last known vehicle positions
+            for vehicle_name, (vehicle_lat, vehicle_lon) in vehicle_positions.items():
+                folium.Marker(
+                    location=[vehicle_lat, vehicle_lon],
+                    popup=f"{vehicle_name} (Last Known Position)",
+                    icon=folium.Icon(color="red", icon="info-sign")
+                ).add_to(m)
 
-    # Display map in Streamlit
-    folium_static(m)
-else:
-    st.error("No route data available.")
+            # Add shuttle route stops and lines
+            for route_name in selected_routes["route_name"].unique():
+                route = selected_routes[selected_routes["route_name"] == route_name]
+                folium.PolyLine(
+                    locations=route[["stop_lat", "stop_lon"]].values.tolist() + [(route.iloc[-1]['last_stop_lat'], route.iloc[-1]['last_stop_lon'])],
+                    color="blue",
+                    weight=2.5,
+                    opacity=1
+                ).add_to(m)
+                for index, row in route.iterrows():
+                    icon_html = f"""
+                    <div style="font-size: 10px; color: white; background-color: red; border-radius: 50%; width: 24px; height: 24px; text-align: center; line-height: 24px;">
+                        {row['stop_sequence']}
+                    </div>
+                    """
+                    folium.Marker(
+                        location=[row["stop_lat"], row["stop_lon"]],
+                        popup=f"Stop {row['stop_sequence']}: {row['stop_intersection']}",
+                        icon=folium.DivIcon(html=icon_html)
+                    ).add_to(m)
+                # Add last stop marker
+                folium.Marker(
+                    location=[route.iloc[-1]["last_stop_lat"], route.iloc[-1]["last_stop_lon"]],
+                    popup=f"Last Stop: {route.iloc[-1]['last_stop']}",
+                    icon=folium.Icon(color="green", icon="flag")
+                ).add_to(m)
+
+            # Display map in Streamlit
+            folium_static(m)
+        else:
+            st.error("No route data available.")
