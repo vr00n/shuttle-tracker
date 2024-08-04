@@ -1,6 +1,0 @@
-route_name,stop_sequence,stop_lat,stop_lon,stop_intersection,time_first_pickup,last_stop,last_stop_lat,last_stop_lon
-GP1,1,40.63465158,-73.94953536,Glenwood Rd & Flatbush Ave,5:00 AM,Greenpoint Depot,40.72868355,-73.94050458
-GP1,2,40.6362569,-73.95104074,Rogers Ave & Farragut Rd,5:00 AM,Greenpoint Depot,40.72868355,-73.94050458
-GP1,3,40.6399495,-73.95128744,Rogers Ave & Newkirk Ave,5:00 AM,Greenpoint Depot,40.72868355,-73.94050458
-GP1,4,40.6507856,-73.95245551,Rogers Ave & Church Ave,5:00 AM,Greenpoint Depot,40.72868355,-73.94050458
-GP1,5,40.66382456,-73.95387932,Empire Blvd & Rogers Ave,5:00 AM,Greenpoint Depot,40.72868355,-73.94050458
