@@ -44,7 +44,7 @@ st.title("Employee Shuttle Tracker")
 vehicle_positions = get_last_vehicle_positions(api)
 
 # Create tabs for each unique last_stop
-last_stops = df['last_stop'].unique()
+last_stops = df['last_stop'].unique().tolist()  # Convert to list
 tabs = st.tabs(last_stops)
 
 for i, last_stop in enumerate(last_stops):
