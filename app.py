@@ -4,26 +4,21 @@ import pandas as pd
 import folium
 from streamlit_folium import folium_static
 
-# Function to fetch live position from Geotab
-def get_vehicle_position(api, vehicle_id):
+# Function to fetch live positions from Geotab
+def get_vehicle_positions(api):
     try:
-        device_statuses = api.get('DeviceStatusInfo', search={'deviceSearch': {'id': vehicle_id}})
-        if not device_statuses:
-            raise ValueError("No status data available for this vehicle.")
-
-        device_status = device_statuses[0]
-        vehicle_lat = device_status.get('latitude', None)
-        vehicle_lon = device_status.get('longitude', None)
-        vehicle_name = device_status.get('device', {}).get('name', 'Unknown Vehicle')
-
-        if vehicle_lat is None or vehicle_lon is None:
-            raise ValueError("Latitude or Longitude data is missing for the vehicle.")
-
-        return vehicle_lat, vehicle_lon, vehicle_name
-
+        device_statuses = api.get('DeviceStatusInfo')
+        vehicle_positions = []
+        for device_status in device_statuses:
+            vehicle_lat = device_status.get('latitude', None)
+            vehicle_lon = device_status.get('longitude', None)
+            vehicle_name = device_status.get('device', {}).get('name', 'Unknown Vehicle')
+            if vehicle_lat is not None and vehicle_lon is not None:
+                vehicle_positions.append((vehicle_lat, vehicle_lon, vehicle_name))
+        return vehicle_positions
     except Exception as e:
-        st.error(f"Error fetching vehicle position: {e}")
-        return None, None, None
+        st.error(f"Error fetching vehicle positions: {e}")
+        return []
 
 # Geotab Authentication
 database = 'nycsbus'
@@ -39,50 +34,46 @@ except mygeotab.exceptions.AuthenticationException:
     st.stop()
 
 # Read the CSV file from GitHub
-csv_url = "https://raw.githubusercontent.com/vr00n/shuttle-tracker/main/routes.csv"
+csv_url = "https://raw.githubusercontent.com/<your-github-username>/<your-repo-name>/main/routes.csv"
 df = pd.read_csv(csv_url)
 
 # Streamlit UI
 st.title("Employee Shuttle Tracker")
 
-# Allow the user to select a route from a dropdown menu
-route_name = st.selectbox("Select Route", df["route_name"].unique())
-selected_route = df[df["route_name"] == route_name]
+# Fetch vehicle positions
+vehicle_positions = get_vehicle_positions(api)
 
-vehicle_id = st.text_input("Enter Vehicle ID:")
-if st.button("Track Vehicle"):
-    if vehicle_id:
-        vehicle_lat, vehicle_lon, vehicle_name = get_vehicle_position(api, vehicle_id)
-        if vehicle_lat and vehicle_lon:
-            # Display Map
-            m = folium.Map(location=[vehicle_lat, vehicle_lon], zoom_start=13)
+# Display Map
+if not df.empty:
+    first_stop_lat = df.iloc[0]['stop_lat']
+    first_stop_lon = df.iloc[0]['stop_lon']
+    m = folium.Map(location=[first_stop_lat, first_stop_lon], zoom_start=12)
 
-            # Add vehicle position
+    # Add vehicle positions
+    for vehicle_lat, vehicle_lon, vehicle_name in vehicle_positions:
+        folium.Marker(
+            location=[vehicle_lat, vehicle_lon],
+            popup=f"{vehicle_name} (Current Position)",
+            icon=folium.Icon(color="red", icon="info-sign")
+        ).add_to(m)
+
+    # Add shuttle route stops and lines
+    for route_name in df["route_name"].unique():
+        selected_route = df[df["route_name"] == route_name]
+        folium.PolyLine(
+            locations=selected_route[["stop_lat", "stop_lon"]].values.tolist(),
+            color="blue",
+            weight=2.5,
+            opacity=1
+        ).add_to(m)
+        for index, row in selected_route.iterrows():
             folium.Marker(
-                location=[vehicle_lat, vehicle_lon],
-                popup=f"{vehicle_name} (Current Position)",
-                icon=folium.Icon(color="red", icon="info-sign")
+                location=[row["stop_lat"], row["stop_lon"]],
+                popup=f"Stop {row['stop_sequence']}: {row['stop_intersection']}",
+                icon=folium.Icon(color="blue", icon="info-sign")
             ).add_to(m)
 
-            # Add shuttle route stops
-            for index, row in selected_route.iterrows():
-                folium.Marker(
-                    location=[row["stop_lat"], row["stop_lon"]],
-                    popup=f"Stop {row['stop_sequence']}: {row['stop_intersection']}",
-                    icon=folium.Icon(color="blue", icon="info-sign")
-                ).add_to(m)
-
-            # Draw route lines
-            folium.PolyLine(
-                locations=selected_route[["stop_lat", "stop_lon"]].values.tolist(),
-                color="blue",
-                weight=2.5,
-                opacity=1
-            ).add_to(m)
-
-            # Display map in Streamlit
-            folium_static(m)
-        else:
-            st.error("Could not retrieve vehicle position.")
-    else:
-        st.error("Please enter a valid Vehicle ID.")
+    # Display map in Streamlit
+    folium_static(m)
+else:
+    st.error("No route data available.")
