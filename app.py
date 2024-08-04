@@ -70,7 +70,7 @@ if not df.empty:
             folium.Marker(
                 location=[row["stop_lat"], row["stop_lon"]],
                 popup=f"Stop {row['stop_sequence']}: {row['stop_intersection']}",
-                icon=folium.Icon(color="blue", icon="info-sign")
+                icon=folium.DivIcon(html=f'<div style="font-size: 10pt">{row["stop_sequence"]}</div>')
             ).add_to(m)
         # Add last stop marker
         folium.Marker(
