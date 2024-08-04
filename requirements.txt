@@ -1,0 +1,5 @@
+streamlit
+mygeotab
+pandas
+folium
+streamlit-folium
