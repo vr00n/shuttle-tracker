@@ -34,7 +34,7 @@ except mygeotab.exceptions.AuthenticationException:
     st.stop()
 
 # Read the CSV file from GitHub
-csv_url = "https://raw.githubusercontent.com/<your-github-username>/<your-repo-name>/main/routes.csv"
+csv_url = "https://raw.githubusercontent.com/vr00n/shuttle-tracker/main/routes.csv"
 df = pd.read_csv(csv_url)
 
 # Streamlit UI
