@@ -61,7 +61,7 @@ if not df.empty:
     for route_name in df["route_name"].unique():
         selected_route = df[df["route_name"] == route_name]
         folium.PolyLine(
-            locations=selected_route[["stop_lat", "stop_lon"]].values.tolist(),
+            locations=selected_route[["stop_lat", "stop_lon"]].values.tolist() + [(selected_route.iloc[-1]['last_stop_lat'], selected_route.iloc[-1]['last_stop_lon'])],
             color="blue",
             weight=2.5,
             opacity=1
@@ -72,6 +72,12 @@ if not df.empty:
                 popup=f"Stop {row['stop_sequence']}: {row['stop_intersection']}",
                 icon=folium.Icon(color="blue", icon="info-sign")
             ).add_to(m)
+        # Add last stop marker
+        folium.Marker(
+            location=[selected_route.iloc[-1]["last_stop_lat"], selected_route.iloc[-1]["last_stop_lon"]],
+            popup=f"Last Stop: {selected_route.iloc[-1]['last_stop']}",
+            icon=folium.Icon(color="green", icon="flag")
+        ).add_to(m)
 
     # Display map in Streamlit
     folium_static(m)
