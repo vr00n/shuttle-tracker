@@ -67,10 +67,15 @@ if not df.empty:
             opacity=1
         ).add_to(m)
         for index, row in selected_route.iterrows():
+            icon_html = f"""
+            <div style="font-size: 10px; color: white; background-color: red; border-radius: 50%; width: 24px; height: 24px; text-align: center; line-height: 24px;">
+                {row['stop_sequence']}
+            </div>
+            """
             folium.Marker(
                 location=[row["stop_lat"], row["stop_lon"]],
                 popup=f"Stop {row['stop_sequence']}: {row['stop_intersection']}",
-                icon=folium.DivIcon(html=f'<div style="font-size: 10pt">{row["stop_sequence"]}</div>')
+                icon=folium.DivIcon(html=icon_html)
             ).add_to(m)
         # Add last stop marker
         folium.Marker(
