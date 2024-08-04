@@ -4,21 +4,21 @@ import pandas as pd
 import folium
 from streamlit_folium import folium_static
 
-# Function to fetch live positions from Geotab
-def get_vehicle_positions(api):
+# Function to fetch the last known position of each vehicle from Geotab
+def get_last_vehicle_positions(api):
     try:
         device_statuses = api.get('DeviceStatusInfo')
-        vehicle_positions = []
+        vehicle_positions = {}
         for device_status in device_statuses:
             vehicle_lat = device_status.get('latitude', None)
             vehicle_lon = device_status.get('longitude', None)
             vehicle_name = device_status.get('device', {}).get('name', 'Unknown Vehicle')
             if vehicle_lat is not None and vehicle_lon is not None:
-                vehicle_positions.append((vehicle_lat, vehicle_lon, vehicle_name))
+                vehicle_positions[vehicle_name] = (vehicle_lat, vehicle_lon)
         return vehicle_positions
     except Exception as e:
         st.error(f"Error fetching vehicle positions: {e}")
-        return []
+        return {}
 
 # Geotab Authentication
 database = 'nycsbus'
@@ -34,14 +34,14 @@ except mygeotab.exceptions.AuthenticationException:
     st.stop()
 
 # Read the CSV file from GitHub
-csv_url = "https://raw.githubusercontent.com/vr00n/shuttle-tracker/main/routes.csv"
+csv_url = "https://raw.githubusercontent.com/<your-github-username>/<your-repo-name>/main/routes.csv"
 df = pd.read_csv(csv_url)
 
 # Streamlit UI
 st.title("Employee Shuttle Tracker")
 
-# Fetch vehicle positions
-vehicle_positions = get_vehicle_positions(api)
+# Fetch the last known vehicle positions
+vehicle_positions = get_last_vehicle_positions(api)
 
 # Display Map
 if not df.empty:
@@ -49,11 +49,11 @@ if not df.empty:
     first_stop_lon = df.iloc[0]['stop_lon']
     m = folium.Map(location=[first_stop_lat, first_stop_lon], zoom_start=12)
 
-    # Add vehicle positions
-    for vehicle_lat, vehicle_lon, vehicle_name in vehicle_positions:
+    # Add last known vehicle positions
+    for vehicle_name, (vehicle_lat, vehicle_lon) in vehicle_positions.items():
         folium.Marker(
             location=[vehicle_lat, vehicle_lon],
-            popup=f"{vehicle_name} (Current Position)",
+            popup=f"{vehicle_name} (Last Known Position)",
             icon=folium.Icon(color="red", icon="info-sign")
         ).add_to(m)
 
